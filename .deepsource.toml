@@ -1,0 +1,34 @@
+version = 1
+
+[[analyzers]]
+name = "shell"
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  plugins = [
+    "react",
+    "angular",
+    "angularjs",
+    "meteor",
+    "ember",
+    "vue"
+  ]
+  environment = [
+    "nodejs",
+    "jquery",
+    "mongo",
+    "browser",
+    "jest",
+    "cypress",
+    "vitest",
+    "mocha",
+    "jasmine"
+  ]
+
+[[analyzers]]
+name = "go"
+
+  [analyzers.meta]
+  import_root = "github.com/0w0Neko/coder"
