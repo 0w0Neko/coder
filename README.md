@@ -1,125 +1,316 @@
-<div align="center">
-  <a href="https://coder.com#gh-light-mode-only">
-    <img src="./docs/images/logo-black.png" style="width: 128px">
-  </a>
-  <a href="https://coder.com#gh-dark-mode-only">
-    <img src="./docs/images/logo-white.png" style="width: 128px">
-  </a>
+![CloudBees Feature Management](https://1ko9923xosh2dsbjsxpwqp45-wpengine.netdna-ssl.com/wp-content/themes/rollout/images/rollout_white_logo1.png)
 
-  <h1>
-  Self-Hosted Cloud Development Environments
-  </h1>
+[![Integration status](https://app.rollout.io/badges/66ab2624c51f1d08b12e23e1)](https://app.rollout.io/app/667d398955bf43af517bc8cd/settings/info)
 
-  <a href="https://coder.com#gh-light-mode-only">
-    <img src="./docs/images/banner-black.png" style="width: 650px">
-  </a>
-  <a href="https://coder.com#gh-dark-mode-only">
-    <img src="./docs/images/banner-white.png" style="width: 650px">
-  </a>
+This repository is a YAML represnetation for Rollout configuration, it is connected (see badge for status) to Rollout service via [Rollout's github app](https://github.com/apps/rollout-io)
+Configuration as code allows the entire configuration of Rollout's state to be stored as source code. It integrates Rollout's UI with engineering existing environment. This approach brings a lot of benefits.
 
-  <br>
-  <br>
 
-[Quickstart](#quickstart) | [Docs](https://coder.com/docs) | [Why Coder](https://coder.com/why) | [Enterprise](https://coder.com/docs/v2/latest/enterprise)
+# What is Rollout
+Rollout is a multi-platform, infrastructure as code, software as a service feature management and remote configuration solution.
 
-[![discord](https://img.shields.io/discord/747933592273027093?label=discord)](https://discord.gg/coder)
-[![codecov](https://codecov.io/gh/coder/coder/branch/main/graph/badge.svg?token=TNLW3OAP6G)](https://codecov.io/gh/coder/coder)
-[![release](https://img.shields.io/github/v/release/coder/coder)](https://github.com/coder/coder/releases/latest)
-[![godoc](https://pkg.go.dev/badge/github.com/coder/coder.svg)](https://pkg.go.dev/github.com/coder/coder)
-[![Go Report Card](https://goreportcard.com/badge/github.com/coder/coder)](https://goreportcard.com/report/github.com/coder/coder)
-[![license](https://img.shields.io/github/license/coder/coder)](./LICENSE)
+# What Are Feature Flags
 
-</div>
+Feature Flags is a powerfull technique based on remotetly and conditionaly opening/closing features threw the entire feature developement and delivery process.  As Martin Fowler writes on [Feature Toggles (aka Feature Flags)](https://martinfowler.com/articles/feature-toggles.html)
 
-[Coder](https://coder.com) enables organizations to set up development environments in their public or private cloud infrastructure. Cloud development environments are defined with Terraform, connected through a secure high-speed Wireguard® tunnel, and are automatically shut down when not in use to save on costs. Coder gives engineering teams the flexibility to use the cloud for workloads that are most beneficial to them.
+> Feature Toggles (often also refered to as Feature Flags) are a powerful technique, allowing teams to modify system behavior without changing code. They fall into various usage categories, and it's important to take that categorization into account when implementing and managing toggles. Toggles introduce complexity. We can keep that complexity in check by using smart toggle implementation practices and appropriate tools to manage our toggle configuration, but we should also aim to constrain the number of toggles in our system.
 
-- Define cloud development environments in Terraform
-  - EC2 VMs, Kubernetes Pods, Docker Containers, etc.
-- Automatically shutdown idle resources to save on costs
-- Onboard developers in seconds instead of days
+You can read more about the Advantages of having Rollout configuration stored and treated as code in [Rollout's support doc](https://support.rollout.io/docs/configuration-as-code)
 
-<p align="center">
-  <img src="./docs/images/hero-image.png">
-</p>
 
-## Quickstart
+# Repository, Directories and YAML structure
+## Branches are Environments
 
-The most convenient way to try Coder is to install it on your local machine and experiment with provisioning cloud development environments using Docker (works on Linux, macOS, and Windows).
+Every environment on Rollout dashboard is mapped to a branch in git. The same name that is used for the environment will be used for the branch name. The only exception being Production environment which is mapped to `master` branch
 
+## Directory structure
+
+Rollout repository integration creates the following directory structure:
 ```
-# First, install Coder
-curl -L https://coder.com/install.sh | sh
-
-# Start the Coder server (caches data in ~/.cache/coder)
-coder server
-
-# Navigate to http://localhost:3000 to create your initial user
-# Create a Docker template, and provision a workspace
+.
+├── experiments             # Experiments definitions
+│   └──  archived           # Archived experiments definitions
+├── target_groups           # Target groups definitions
+└── README.md
 ```
 
-## Install
+- All experiments are located under the experiment folder
+- All archived experiments are located under the `experiments/archived` folder
 
-The easiest way to install Coder is to use our
-[install script](https://github.com/coder/coder/blob/main/install.sh) for Linux
-and macOS. For Windows, use the latest `..._installer.exe` file from GitHub
-Releases.
+## Experiment Examples
 
-```bash
-curl -L https://coder.com/install.sh | sh
+### False for all users
+```yaml
+flag: default.followingView
+type: experiment
+name: following view
+value: false
+```
+This YAML representation in Rollout's dashboard:
+![dashboard](https://files.readme.io/00b37e6-Screen_Shot_2018-12-03_at_11.47.56.png)
+### 50% split
+```yaml
+flag: default.followingView
+type: experiment
+name: following view
+value:
+  - option: true
+    percentage: 50
+```
+This YAML representation in Rollout's dashboard:
+![dashboard](https://files.readme.io/5af4d9e-Screen_Shot_2018-12-03_at_12.01.28.png)
+### Open feature for QA and Beta Users on version 3.0.1, otherwise close it
+```yaml
+flag: default.followingView
+type: experiment
+name: following view
+conditions:
+  - group:
+      name:
+        - QA
+        - Beta Users
+    version:
+      operator: semver-gte
+      semver: 3.0.1
+    value: true
+value: false
+```
+This YAML representation in Rollout's dashboard:
+![dashboard](https://files.readme.io/6884476-Screen_Shot_2018-12-03_at_12.04.13.png)
+### Open feature for all platform beside Android
+```yaml
+flag: default.followingView
+type: experiment
+name: following view
+platforms:
+  - name: Android
+    value: false
+value: true
+```
+Dashboard default platfrom configuration:
+![dashboard](https://files.readme.io/461c854-Screen_Shot_2018-12-04_at_10.19.59.png)
+Dashboard Android configuration:
+![dashboard](https://files.readme.io/1aafd04-Screen_Shot_2018-12-03_at_21.39.52.png)
+## Experiment YAML
+
+This section describes the yaml scheme for an experiment. It is a composite of 3 schemas:
+
+
+-  [Root schema ](doc:configuration-as-code#section-root-schema)  - the base schema for experiment
+-  [Splited Value schema](doc:configuration-as-code#section-splitedvalue-schema)  - Represents a splited value -  a value that is distributed among different instances based on percentage
+-  [Scheduled Value schema](doc:configuration-as-code#section-scheduledvalue-schema)  - Represents a scheduled value -  a value that is based on the time that the flag was evaluated
+-  [Condition schema](doc:configuration-as-code#section-condition-schema)  - Specify how to target a specific audience/device
+-  [Platform schema](doc:configuration-as-code#section-platform-schema)  - Specify how to target a specific platform
+
+
+
+### Root Schema
+An Experiment controls the flag value in runtime:
+
+```yaml
+# Yaml api version
+# Optional: defaults to "1.0.0"
+version: Semver
+
+# Yaml Type (required)
+type: "experiment"
+
+# The flag being controlled by this experiment (required)
+flag: String
+
+# The available values that this flag can be
+# Optional=[false, true]
+availableValues: [String|Bool]
+
+# The name of the experiment
+# Optional: default flag name
+name: String
+
+# The Description of the experiment
+# Optional=""
+description: String
+
+# Indicates if the experiment is active
+# Optional=true
+enabled: Boolean
+
+# Expriment lables
+# Optional=[]
+labels: [String]|String
+
+# Stickiness property that controls percentage based tossing
+# Optional="rox.distict_id"
+stickinessProperty: String
+
+# Platfrom explicit targeting
+# Optional=[]
+platforms: [Platfrom]  # see Platfrom schema
+
+# Condition and values for default platfomr
+# Optional=[]
+conditions: [Condition] # see Condition schema
+
+# Value when no Condition is met
+# Optional
+#  false for boolean flags
+#  null for enum flags  (indicates default value)
+value: String|Boolean|[SplitedValue]|[ScheduledValue]|null
 ```
 
-You can run the install script with `--dry-run` to see the commands that will be used to install without executing them. You can modify the installation process by including flags. Run the install script with `--help` for reference.
+### SplitedValue Schema
+```yaml
+# Percentage, used for splitting traffic across different values
+# Optional=100
+percentage: Number
 
-> See [install](https://coder.com/docs/v2/latest/install) for additional methods.
+# The Value to be delivered
+option: String|Boolean
+```
+### ScheduledValue Schema
+```yaml
+# The Date from which this value is relevant
+# Optional=undefined
+from: Date
 
-Once installed, you can start a production deployment<sup>1</sup> with a single command:
+# Percentage, used for splitting traffic across different values
+# Optional=100
+percentage: Number
+```
+### Condition Schema
 
-```shell
-# Automatically sets up an external access URL on *.try.coder.app
-coder server
+The Condition is a pair of condition and value, an array of conditions can be viewed as an if-else statement by the order of conditions
 
-# Requires a PostgreSQL instance (version 13 or higher) and external access URL
-coder server --postgres-url <url> --access-url <url>
+The schema contains three types of condition statements
+- Dependency - express flag dependencies, by indicating flag name and expected value
+- Groups - a list of target-groups and the operator that indicates the relationship between them (`or`|`and`|`not`)
+- Version -  comparing the version of
+[/block]
+The relationship between these items is `and`, meaning:
+       If the dependency is met `and` Groups matches `and` Version matches  `then` flage=value
+
+Here is the Condition schema
+```yaml
+# Condition this flag value with another flag value
+dependency:
+    # Flag Name
+    flag: String
+    # The expected Flag Value
+    value: String|Boolean
+
+# Condition flag value based on target group(s)
+group:
+    # The logical relationship between the groups
+    # Optional = or
+    operator: or|and|not
+
+    # Name of target groups
+    name: [String]|String
+
+# Condition flag value based release version
+version:
+    # The operator to compare version
+    operator: semver-gt|semver-gte|semver-eq|semver-ne|semver-lt|semver-lte
+
+    # The version to compare to
+    semver: Semver
+
+# Value when Condition is met
+value: String|Boolean|[SplitedValue]|[ScheduledValue]|null
+```
+### Platform Schema
+The platform object indicates a specific targeting for a specific platform
+
+```yaml
+# Name of the platform, as defined in the SDK running
+name: String
+
+# Override the flag name, when needed
+# Optional = experiment flag name
+flag: String
+
+# Condition and values for default platfomr
+# Optional=[]
+conditions: [Condition] # see Condition schema
+
+# Value when no Condition is met
+# Optional
+#  false for boolean flags
+#  null for enum flags  (indicates default value)
+value: String|Boolean|[SplitedValue]|[ScheduledValue]|null # see Value schema
 ```
 
-> <sup>1</sup> For production deployments, set up an external PostgreSQL instance for reliability.
 
-Use `coder --help` to get a list of flags and environment variables. Use our [install guides](https://coder.com/docs/v2/latest/install) for a full walkthrough.
+## Target Group Examples
+### List of matching userid
+```yaml
+type: target-group
+name: QA
+conditions:
+  - operator: in-array
+    property: soundcloud_id
+    operand:
+      - 5c0588007cd291cca474454f
+      - 5c0588027cd291cca4744550
+      - 5c0588037cd291cca4744551
+      - 5c0588047cd291cca4744552
+      - 5c0588047cd291cca4744553
+```
 
-## Documentation
+![dashboard](https://files.readme.io/7affbbe-Screen_Shot_2018-12-03_at_21.47.05.png)
+### Using number property for comparison
 
-Browse our docs [here](https://coder.com/docs/v2) or visit a specific section below:
+```yaml
+type: target-group
+name: DJ
+conditions:
+  - operator: gte
+    property: playlist_count
+    operand: 100
+description: Users with a lot of playlists
+```
 
-- [**Templates**](https://coder.com/docs/v2/latest/templates): Templates are written in Terraform and describe the infrastructure for workspaces
-- [**Workspaces**](https://coder.com/docs/v2/latest/workspaces): Workspaces contain the IDEs, dependencies, and configuration information needed for software development
-- [**IDEs**](https://coder.com/docs/v2/latest/ides): Connect your existing editor to a workspace
-- [**Administration**](https://coder.com/docs/v2/latest/admin): Learn how to operate Coder
-- [**Enterprise**](https://coder.com/docs/v2/latest/enterprise): Learn about our paid features built for large teams
+On rollout Dashboard
+![dashboard](https://files.readme.io/dcb562f-Screen_Shot_2018-12-03_at_21.43.19.png)
+## Target Group YAML
 
-## Community and Support
+A Target group is a set of rules on top of custom properties that are defined in runtime, it is used in experiments conditions
 
-Feel free to [open an issue](https://github.com/coder/coder/issues/new) if you have questions, run into bugs, or have a feature request.
+```yaml
+# Yaml api version
+# Optional: defaults to "1.0.0"
+version: Semver
 
-[Join our Discord](https://discord.gg/coder) or [Slack](https://cdr.co/join-community) to provide feedback on in-progress features, and chat with the community using Coder!
+# Yaml Type (required)
+type: "target-group"
 
-## Contributing
+#Target Group Name
+name: String
 
-Contributions are welcome! Read the [contributing docs](https://coder.com/docs/v2/latest/CONTRIBUTING) to get started.
+# Target Group description
+# Optional = ""
+description: String
 
-Find our list of contributors [here](https://github.com/coder/coder/graphs/contributors).
+# The logical relationship between conditions
+# Optional = and
+operator: or|and
 
-## Related
+# Array of Conditions that have a logical AND relationship between them
+conditions:
+    # The Custom property to be conditioned (first operand)
+  - property: String
 
-We are always working on new integrations. Feel free to open an issue to request an integration. Contributions are welcome in any official or community repositories.
+    # The Operator of the confition
+    operator: is-undefined|is-true|is-false|eq|ne|gte|gt|lt|lte|regex|semver-gt|semver-eq|semver-gte|semver-gt|semver-lt|semver-lte
 
-### Official
+    # The Second operand of the condition
+    # Optional - Based on operator  (is-undefined, is-true, is-false)
+    operand: String|Number|[String]
+```
 
-- [**VS Code Extension**](https://marketplace.visualstudio.com/items?itemName=coder.coder-remote): Open any Coder workspace in VS Code with a single click
-- [**JetBrains Gateway Extension**](https://plugins.jetbrains.com/plugin/19620-coder): Open any Coder workspace in JetBrains Gateway with a single click
-- [**Self-Hosted VS Code Extension Marketplace**](https://github.com/coder/code-marketplace): A private extension marketplace that works in restricted or airgapped networks integrating with [code-server](https://github.com/coder/code-server).
+# See Also:
+- Using Roxy docker image for Microservices Automated Testing and Local development [here](https://support.rollout.io/docs/microservices-automated-testing-and-local-development)
+- Configuration as Code advantages [here](https://support.rollout.io/docs/configuration-as-code#section-advantages-of-configuration-as-code)
+- Integration walkthrough [here](https://support.rollout.io/docs/configuration-as-code#section-connecting-to-github-cloud)
 
-### Community
 
-- [**Provision Coder with Terraform**](https://github.com/ElliotG/coder-oss-tf): Provision Coder on Google GKE, Azure AKS, AWS EKS, DigitalOcean DOKS, IBMCloud K8s, OVHCloud K8s, and Scaleway K8s Kapsule with Terraform
-- [**Coder GitHub Action**](https://github.com/marketplace/actions/update-coder-template): A GitHub Action that updates Coder templates
-- [**Various Templates**](./examples/templates/community-templates.md): Hetzner Cloud, Docker in Docker, and other templates the community has built.
+Please contact support@rollout.io for any issues questions or suggestions you might have
